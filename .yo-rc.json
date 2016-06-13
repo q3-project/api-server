@@ -1,0 +1,10 @@
+{
+  "generator-flask-api": {
+    "appName": "app",
+    "database": "postgresql",
+    "databaseMapper": "none",
+    "versioningScheme": "none",
+    "currentVersion": "",
+    "urlPrefix": ""
+  }
+}
