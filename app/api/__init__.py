@@ -14,7 +14,7 @@ def index():
 @api.route('/stuff', methods = ['POST'])
 def stuff():
     print request.json
-    if not request.json or not 'title' in request.json:
+    if not request.json in request.json:
         print 'hey'
         abort(400)
 
