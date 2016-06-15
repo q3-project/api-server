@@ -13,7 +13,7 @@ def index():
 
 @api.route('/stuff', methods = ['POST'])
 def stuff():
-    print request.json
+    print request
     if not request.json in request.json:
         print 'hey'
         abort(400)
