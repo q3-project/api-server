@@ -6,19 +6,20 @@ import json
 
 api = Blueprint('api', __name__)
 
-@api.route('/')
+@api.route('/', methods = ['GET'])
 def index():
     return 'Hello World'
 
 
-@api.route('/stuff', methods = ['POST'])
+@api.route('/', methods = ['POST'])
 def stuff():
     print request
-    if not request.json in request.json:
-        print 'hey'
-        abort(400)
+    print type(request)
+    
+    # if not request.json in request.json:
+    #     print 'fail'
+    #     abort(400)
 
-    print request
     # f = open('stuff', 'w')
     # f.write(stuff)
     # f.close()
