@@ -1,6 +1,7 @@
 from flask import Blueprint
 from flask import request
 from flask import abort
+from flask import jsonify
 from PIL import Image
 import json
 
@@ -21,4 +22,8 @@ def stuff():
 
     imgFile.show()
 
-    return 'cool beans', 200
+    return jsonify(plantnName='Chinkapin Oak',
+                   species='Quercus muehlenbergii',
+                   imgUrl='http://www.nature.org/ourinitiatives/regions/northamerica/unitedstates/tennessee/chinkapin-oak-leaf-640x400.jpg',
+                   habitat='Dry, rocky soils', growthHabit='Deciduous tree, growing 15-25 m tall', bloomTime='Mid-spring', longevity='Long-lived'
+                   )
