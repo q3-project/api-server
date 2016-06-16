@@ -15,8 +15,10 @@ def index():
 @api.route('/', methods = ['POST'])
 def stuff():
     print request
-    file = request.files['file']
-    if file:
-         img = Image.open(file)
-         img.show()
-    return 'sup', 200
+    print request.files['file']
+
+    imgFile = Image.open(request.files['file'])
+
+    imgFile.show()
+
+    return 'cool beans', 200
