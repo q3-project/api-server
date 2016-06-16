@@ -1,6 +1,7 @@
 from flask import Blueprint
 from flask import request
 from flask import abort
+from PIL import Image
 import json
 
 
@@ -14,13 +15,8 @@ def index():
 @api.route('/', methods = ['POST'])
 def stuff():
     print request
-    print type(request)
-    
-    # if not request.json in request.json:
-    #     print 'fail'
-    #     abort(400)
-
-    # f = open('stuff', 'w')
-    # f.write(stuff)
-    # f.close()
+    file = request.files['file']
+    if file:
+         img = Image.open(file)
+         img.show()
     return 'sup', 200
