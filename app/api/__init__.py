@@ -3,10 +3,9 @@ from flask import request
 from flask import abort
 from flask import jsonify
 from PIL import Image
+import os
 import json
 import sys
-
-sys.path.insert(0, 'classifier')
 
 from predict import predict
 
@@ -24,13 +23,14 @@ def stuff():
     if not request.files:
         abort(400)
 
-    print request.files['file']
+    img = request.files['file']
+
+
+    p = predict(img)
+    print p
 
     img = Image.open(request.files['file'])
 
-    p = predict(img)
-
-    return jsonify(plantnName='Red Oak',
-                   species='Acer rubrum',
-                   imgUrl='https://en.wikipedia.org/wiki/Acer_rubrum#/media/File:2014-10-30_11_09_40_Red_Maple_during_autumn_on_Lower_Ferry_Road_in_Ewing,_New_Jersey.JPG'
-                   )
+    return json.dumps([{'plantName':'Red Oak',
+                   'imgUrl':'http://cossdotblog.wpengine.netdna-cdn.com/wp-content/uploads/2010/05/red_maple_fall-RESIZED.jpg',
+                   'bloomTime':'summer!', 'matchPercent': '99.9%'}])
