@@ -4,6 +4,11 @@ from flask import abort
 from flask import jsonify
 from PIL import Image
 import json
+import sys
+
+sys.path.insert(0, 'classifier')
+
+from predict import predict
 
 
 api = Blueprint('api', __name__)
@@ -16,14 +21,16 @@ def index():
 @api.route('/', methods = ['POST'])
 def stuff():
     print request
+    if not request.files:
+        abort(400)
+
     print request.files['file']
 
-    imgFile = Image.open(request.files['file'])
+    img = Image.open(request.files['file'])
 
-    imgFile.show()
+    p = predict(img)
 
-    return jsonify(plantnName='Chinkapin Oak',
-                   species='Quercus muehlenbergii',
-                   imgUrl='http://www.nature.org/ourinitiatives/regions/northamerica/unitedstates/tennessee/chinkapin-oak-leaf-640x400.jpg',
-                   habitat='Dry, rocky soils', growthHabit='Deciduous tree, growing 15-25 m tall', bloomTime='Mid-spring', longevity='Long-lived'
+    return jsonify(plantnName='Red Oak',
+                   species='Acer rubrum',
+                   imgUrl='https://en.wikipedia.org/wiki/Acer_rubrum#/media/File:2014-10-30_11_09_40_Red_Maple_during_autumn_on_Lower_Ferry_Road_in_Ewing,_New_Jersey.JPG'
                    )
