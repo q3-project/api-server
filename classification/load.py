@@ -18,9 +18,6 @@ def load():
         'acer_rubrum',
         'ptelea_trifoliata',
         'ulmus_rubra'
-        # 'test1',
-        # 'test2',
-        # 'test3'
     ]
     STANDARD_SIZE = (128, 128)
 
@@ -28,14 +25,9 @@ def load():
         path = os.path.join(
             os.path.split(__file__)[0],
             'data',
-            'leafsnap-dataset',
-            'dataset',
-            'images',
             'lab',
             species
         )
-        print(path)
-
 
         directory = os.listdir(path)
         images = []
@@ -47,7 +39,6 @@ def load():
                 img2 = img.transpose(Image.FLIP_LEFT_RIGHT)
                 img2 = list(img2.getdata())
                 img = list(img.getdata())
-                # img = map(list, img)
                 img = numpy.array(img)
                 img2 = numpy.array(img2)
                 images.append((img, tag))
@@ -59,13 +50,9 @@ def load():
         path = os.path.join(
             os.path.split(__file__)[0],
             'data',
-            'leafsnap-dataset',
-            'dataset',
-            'images',
             'field',
             species
         )
-        print(path)
 
         directory = os.listdir(path)
         images = []
@@ -80,7 +67,6 @@ def load():
                     img = img.crop((150, 150, img.size[0] - 150, img.size[1] - 150))
                     img = img.resize(STANDARD_SIZE)
                     img = list(img.getdata())
-                    # img = map(list, img)
                     img = numpy.array(img)
                     images.append((img, tag))
 
@@ -90,13 +76,9 @@ def load():
         path = os.path.join(
             os.path.split(__file__)[0],
             'data',
-            'leafsnap-dataset',
-            'dataset',
-            'images',
             'field',
             species
         )
-        print(path)
 
         directory = os.listdir(path)
         images = []
@@ -111,7 +93,6 @@ def load():
                     img = img.crop((150, 150, img.size[0] - 150, img.size[1] - 150))
                     img = img.resize(STANDARD_SIZE)
                     img = list(img.getdata())
-                    # img = map(list, img)
                     img = numpy.array(img)
                     images.append((img, tag))
 
@@ -145,6 +126,7 @@ def load():
     for species in species_list:
         print('... loading %s, as %i' % (species, tag))
         train += load_leaf_train(species, tag)
+        print(len(train))
         valid += load_leaf_valid(species, tag)
         test += load_leaf_test(species, tag)
 
@@ -164,6 +146,8 @@ def load():
     test_x, test_y = shared_dataset(test)
     valid_x, valid_y = shared_dataset(valid)
 
+    print(train_y)
+
     rval = [(train_x, train_y), (valid_x, valid_y), (test_x, test_y)]
 
     return rval
@@ -175,9 +159,6 @@ def load_diff():
         'acer_rubrum',
         'ptelea_trifoliata',
         'ulmus_rubra'
-        # 'test1',
-        # 'test2',
-        # 'test3'
     ]
     STANDARD_SIZE = (128, 128)
 
@@ -185,13 +166,9 @@ def load_diff():
         path = os.path.join(
             os.path.split(__file__)[0],
             'data',
-            'leafsnap-dataset',
-            'dataset',
-            'images',
             'lab',
             species
         )
-        print(path)
 
         i = 1
         directory = os.listdir(path)
@@ -204,7 +181,6 @@ def load_diff():
                     img = img.crop((150, 150, img.size[0] - 150, img.size[1] - 150))
                     img = img.resize(STANDARD_SIZE)
                     img = list(img.getdata())
-                    # img = map(list, img)
                     img = numpy.array(img)
                     images.append((img, tag))
 
@@ -214,13 +190,9 @@ def load_diff():
         path = os.path.join(
             os.path.split(__file__)[0],
             'data',
-            'leafsnap-dataset',
-            'dataset',
-            'images',
             'lab',
             species
         )
-        print(path)
 
         directory = os.listdir(path)
         images = []
@@ -235,7 +207,6 @@ def load_diff():
                     img = img.crop((150, 150, img.size[0] - 150, img.size[1] - 150))
                     img = img.resize(STANDARD_SIZE)
                     img = list(img.getdata())
-                    # img = map(list, img)
                     img = numpy.array(img)
                     images.append((img, tag))
 
@@ -245,13 +216,9 @@ def load_diff():
         path = os.path.join(
             os.path.split(__file__)[0],
             'data',
-            'leafsnap-dataset',
-            'dataset',
-            'images',
             'lab',
             species
         )
-        print(path)
 
         directory = os.listdir(path)
         images = []
@@ -266,7 +233,6 @@ def load_diff():
                     img = img.crop((150, 150, img.size[0] - 150, img.size[1] - 150))
                     img = img.resize(STANDARD_SIZE)
                     img = list(img.getdata())
-                    # img = map(list, img)
                     img = numpy.array(img)
                     images.append((img, tag))
 

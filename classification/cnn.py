@@ -5,6 +5,9 @@ import theano.tensor as T
 from theano.tensor.nnet import conv2d
 from theano.tensor.signal import downsample
 
+import six.moves.cPickle as pickle
+import dill
+
 import sys
 import os
 import timeit
@@ -12,7 +15,7 @@ import timeit
 import numpy
 
 from logReg import LogReg
-from single_layer_MLP import HiddenLayer
+from mlp import HiddenLayer
 from load import load, load_diff
 
 class ConvPoolLayer(object):
@@ -56,10 +59,70 @@ class ConvPoolLayer(object):
 
         self.input = input
 
+class CNN(object):
+    def __init__(self, rng, n_in, n_out, n_fully_connected, batch_size, image_size, filter_shape0, filter_shape1):
+
+        self.x = T.matrix('x')
+        self.y = T.ivector('y')
+
+        self.layer0_input = self.x.reshape((batch_size, 1, image_size, image_size))
+
+        self.layer0 = ConvPoolLayer(
+            rng=rng,
+            input=self.layer0_input,
+            image_shape=(batch_size, 1, image_size, image_size),
+            filter_shape=filter_shape0
+        )
+
+        image_size_1 = (image_size - 4) / 2
+
+        self.layer1 = ConvPoolLayer(
+            rng=rng,
+            input=self.layer0.output,
+            image_shape=(batch_size, filter_shape0[0], image_size_1, image_size_1),
+            filter_shape=filter_shape1
+        )
+
+        image_size_2 = (image_size_1 - 4) / 2
+        layer2_input = self.layer1.output.flatten(2)
+
+        self.layer2 = HiddenLayer(
+            rng=rng,
+            input=layer2_input,
+            n_in=filter_shape1[0] * image_size_2 * image_size_2,
+            n_out=n_fully_connected,
+            activation=T.tanh
+        )
+
+        self.layer3 = LogReg(
+            input=self.layer2.output,
+            n_in=n_fully_connected,
+            n_out=n_out
+        )
+
+        self.L1 = (
+            abs(self.layer0.W).sum()
+            + abs(self.layer1.W).sum()
+            + abs(self.layer2.W).sum()
+            + abs(self.layer3.W).sum()
+        )
+
+        self.L2 = (
+            abs(self.layer0.W).sum()
+            + (self.layer1.W ** 2).sum()
+            + (self.layer2.W ** 2).sum()
+            + (self.layer3.W ** 2).sum()
+        )
+
+        self.negative_log_likelihood = self.layer3.negative_log_likelihood
+
+        self.params = self.layer3.params + self.layer2.params + self.layer1.params + self.layer0.params
+
+        self.y_pred = self.layer3.y_pred
+
+
 def train(learning_rate=0.01,
-    n_epochs=10,
-    dataset='mnist.pkl.gz',
-    nkerns=[20, 50],
+    n_epochs=5,
     batch_size=10,
     image_size=128,
     L1_reg = 0.0,
@@ -68,8 +131,6 @@ def train(learning_rate=0.01,
     datasets = load()
 
     train_set_x, train_set_y = datasets[0]
-    print(train_set_x)
-    print(train_set_y)
     valid_set_x, valid_set_y = datasets[1]
     test_set_x, test_set_y = datasets[2]
 
@@ -79,94 +140,50 @@ def train(learning_rate=0.01,
 
     print('... building the model')
 
-    index = T.lscalar()
-
-    x = T.matrix('x')
-    y = T.ivector('y')
-
     rng = numpy.random.RandomState(123455)
 
-    layer0_input = x.reshape((batch_size, 1, image_size, image_size))
+    index = T.lscalar()
 
-    layer0 = ConvPoolLayer(
-        rng,
-        input=layer0_input,
-        image_shape=(batch_size, 1, image_size, image_size),
-        filter_shape=(nkerns[0], 1, 5, 5),
-        poolsize=(2, 2)
+    classifier = CNN(
+        rng=rng,
+        n_in=image_size * image_size,
+        n_out=3,
+        n_fully_connected=200,
+        batch_size=batch_size,
+        image_size=image_size,
+        filter_shape0=(20, 1, 5, 5),
+        filter_shape1=(50, 20, 5, 5)
     )
 
-    image_size_1 = (image_size - 4) / 2
-
-    layer1 = ConvPoolLayer(
-        rng,
-        input=layer0.output,
-        image_shape=(batch_size, nkerns[0], image_size_1, image_size_1),
-        filter_shape=(nkerns[1], nkerns[0], 5, 5),
-        poolsize=(2, 2)
-    )
-
-    image_size_2 = (image_size_1 - 4) / 2
-    layer2_input = layer1.output.flatten(2)
-
-    layer2 = HiddenLayer(
-        rng,
-        input=layer2_input,
-        n_in=nkerns[1] * image_size_2 * image_size_2,
-        n_out=500,
-        activation=T.tanh
-    )
-
-    layer3 = LogReg(
-        input=layer2.output,
-        n_in=500,
-        n_out=3
-    )
-
-    L1 = (
-        abs(layer0.W).sum()
-        + abs(layer1.W).sum()
-        + abs(layer2.W).sum()
-        + abs(layer3.W).sum()
-    )
-
-    L2 = (
-        abs(layer0.W).sum()
-        + (layer1.W ** 2).sum()
-        + (layer2.W ** 2).sum()
-        + (layer3.W ** 2).sum()
-    )
-
-    cost = (layer3.negative_log_likelihood(y)
-        + L1_reg * L1
-        + L2_reg * L2
+    cost = (
+        classifier.negative_log_likelihood(classifier.y)
+        + L1_reg * classifier.L1
+        + L2_reg * classifier.L2
     )
 
     test_model = theano.function(
         [index],
-        layer3.errors(y),
+        classifier.layer3.errors(classifier.y),
         givens={
-            x: test_set_x[index * batch_size: (index + 1) * batch_size],
-            y: test_set_y[index * batch_size: (index + 1) * batch_size]
+            classifier.x: test_set_x[index * batch_size: (index + 1) * batch_size],
+            classifier.y: test_set_y[index * batch_size: (index + 1) * batch_size]
         }
     )
 
     validate_model = theano.function(
         [index],
-        layer3.errors(y),
+        classifier.layer3.errors(classifier.y),
         givens={
-            x: valid_set_x[index * batch_size: (index + 1) * batch_size],
-            y: valid_set_y[index * batch_size: (index + 1) * batch_size]
+            classifier.x: valid_set_x[index * batch_size: (index + 1) * batch_size],
+            classifier.y: valid_set_y[index * batch_size: (index + 1) * batch_size]
         }
     )
 
-    params = layer3.params + layer2.params + layer1.params + layer0.params
-
-    grads = T.grad(cost, params)
+    grads = T.grad(cost, classifier.params)
 
     updates = [
         (param_i, param_i - learning_rate * grad_i)
-        for param_i, grad_i in zip(params, grads)
+        for param_i, grad_i in zip(classifier.params, grads)
     ]
 
     train_model = theano.function(
@@ -174,8 +191,8 @@ def train(learning_rate=0.01,
         cost,
         updates=updates,
         givens={
-            x: train_set_x[index * batch_size: (index + 1) * batch_size],
-            y: train_set_y[index * batch_size: (index + 1) * batch_size]
+            classifier.x: train_set_x[index * batch_size: (index + 1) * batch_size],
+            classifier.y: train_set_y[index * batch_size: (index + 1) * batch_size]
         }
     )
 
@@ -237,8 +254,10 @@ def train(learning_rate=0.01,
                         (epoch, minibatch_index + 1, n_train_batches,
                         test_score * 100.))
 
+                    classifier.layer0_input = classifier.x.reshape((1, 1, 128, 128))
+
                     with open('best_model.pkl', 'wb') as f:
-                        pickle.dump(classifier, f)
+                        dill.dump(classifier, f)
 
             if patience <= iter:
                 done_looping = True
